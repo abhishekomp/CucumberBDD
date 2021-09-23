@@ -10,6 +10,7 @@ public class TestFeatureFile_steps {
 	@Given("I have numbers")
 	public void i_have_numbers() {
 	    System.out.println("Inside I have numbers");
+	    System.out.println("Job id = " + System.getenv("JOB_ID_TRS"));
 	}
 
 	@When("I add them")
