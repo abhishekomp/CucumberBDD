@@ -63,9 +63,7 @@ jobs:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
         
-      - name: Using Variables
+      - name: Capture variable
         env:
          JOB_ID_TRS: ${{ github.run_id }}
-         
-      - name: What is the run id
         run: echo "$JOB_ID_TRS"
