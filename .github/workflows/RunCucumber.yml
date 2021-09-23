@@ -41,7 +41,7 @@ jobs:
       - name: Build with Maven
         env:
           JOB_ID_TRS: ${{ github.run_id }}
-        run: |
+        run:
           mvn test -Dtest=TestRunner
           --define cucumber.filter.tags="${{ github.event.inputs.tags }}"
           --batch-mode --quiet
