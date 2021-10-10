@@ -11,6 +11,7 @@ public class TestFeatureFile_steps {
 	public void i_have_numbers() {
 	    System.out.println("Inside I have numbers");
 	    System.out.println("Job id = " + System.getenv("JOB_ID_TRS"));
+	    System.out.println("Example Key from Postman = " + System.getenv("EXAMPLE_KEY"));
 	}
 
 	@When("I add them")
