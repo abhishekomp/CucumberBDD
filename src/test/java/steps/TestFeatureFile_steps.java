@@ -19,10 +19,10 @@ public class TestFeatureFile_steps {
 	    System.out.println("ICC from postman = " + System.getenv("TEST_CLIENT_ICCID"));
 	    System.out.println("GITHUB_RUN_URL = " + System.getenv("GITHUB_RUN_URL"));
 
-		System.out.println("icc are = ");
-		JSONObject payload = new JSONObject(clientPyaload.toString());
-		JSONArray icc = payload.getJSONArray("icc");
-		icc.forEach(System.out::println);
+//		System.out.println("icc are = ");
+//		JSONObject payload = new JSONObject(clientPyaload);
+//		JSONArray icc = payload.getJSONArray("icc");
+//		icc.forEach(System.out::println);
 
 	}
 
