@@ -46,5 +46,8 @@ jobs:
         env:
           TEST_ORDER_NUM: "${{ github.event.client_payload.example-key }}"
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-        run: mvn test -Dtest=TestRunner
+        #run: mvn test -Dtest=TestRunner
+        run: >
+          mvn test -Dtest=TestRunner
+          --define cucumber.filter.tags=@P2
       
