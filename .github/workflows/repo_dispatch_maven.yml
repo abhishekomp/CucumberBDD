@@ -43,8 +43,8 @@ jobs:
         run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
 
       - name: Build with Maven
-          env:
-            TEST_ORDER_NUM: "${{ github.event.client_payload.example-key }}"
+        env:
+          TEST_ORDER_NUM: "${{ github.event.client_payload.example-key }}"
           run: >
             mvn test -Dtest=TestRunner
       
