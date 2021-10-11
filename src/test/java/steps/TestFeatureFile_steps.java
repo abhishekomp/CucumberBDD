@@ -3,6 +3,8 @@ package steps;
 import io.cucumber.java.en.Given;
 import io.cucumber.java.en.Then;
 import io.cucumber.java.en.When;
+import org.json.JSONArray;
+import org.json.JSONObject;
 
 public class TestFeatureFile_steps {
 	
@@ -16,6 +18,13 @@ public class TestFeatureFile_steps {
 	    System.out.println("clientPyaload = " + clientPyaload);
 	    System.out.println("ICC from postman = " + System.getenv("TEST_CLIENT_ICCID"));
 	    System.out.println("GITHUB_RUN_URL = " + System.getenv("GITHUB_RUN_URL"));
+
+		System.out.println("icc are = ");
+		JSONObject payload = new JSONObject(clientPyaload);
+		JSONArray icc = payload.getJSONArray("icc");
+
+		icc.forEach(System.out::println);
+
 	}
 
 	@When("I add them")
