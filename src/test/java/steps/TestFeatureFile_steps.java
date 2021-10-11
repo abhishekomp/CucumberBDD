@@ -20,9 +20,8 @@ public class TestFeatureFile_steps {
 	    System.out.println("GITHUB_RUN_URL = " + System.getenv("GITHUB_RUN_URL"));
 
 		System.out.println("icc are = ");
-		JSONObject payload = new JSONObject(clientPyaload);
+		JSONObject payload = new JSONObject(clientPyaload.toString());
 		JSONArray icc = payload.getJSONArray("icc");
-
 		icc.forEach(System.out::println);
 
 	}
