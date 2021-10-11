@@ -45,6 +45,5 @@ jobs:
       - name: Build with Maven
         env:
           TEST_ORDER_NUM: "${{ github.event.client_payload.example-key }}"
-          run: >
-            mvn test -Dtest=TestRunner
+        run: mvn test -Dtest=TestRunner
       
