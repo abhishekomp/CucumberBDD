@@ -12,6 +12,7 @@ public class TestFeatureFile_steps {
 	    System.out.println("Inside I have numbers");
 	    System.out.println("Job id = " + System.getenv("JOB_ID_TRS"));
 	    System.out.println("Example Key from Postman = " + System.getenv("TEST_ORDER_NUM"));
+	    System.out.println("GITHUB_RUN_URL = " + System.getenv("GITHUB_RUN_URL"));
 	}
 
 	@When("I add them")
