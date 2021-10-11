@@ -14,7 +14,7 @@ public class TestFeatureFile_steps {
 	    System.out.println("Example Key from Postman = " + System.getenv("TEST_ORDER_NUM"));
 	    String clientPyaload = System.getenv("TEST_CLIENT_PAYLOAD");
 	    System.out.println("clientPyaload = " + clientPyaload);
-	    System.out.println("ICC from postman = " + System.getenv("TEST_CLIENT_ICC"));
+	    System.out.println("ICC from postman = " + System.getenv("TEST_CLIENT_ICCID"));
 	    System.out.println("GITHUB_RUN_URL = " + System.getenv("GITHUB_RUN_URL"));
 	}
 
