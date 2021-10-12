@@ -13,6 +13,7 @@ public class TestFeatureFile_steps {
 	public void i_have_numbers() {
 	    System.out.println("Inside I have numbers");
 	    System.out.println("Job id = " + System.getenv("JOB_ID_TRS"));
+            System.out.println("Test OrderNumber = " + System.getenv("TEST_ORDERNUM"));
 	    System.out.println("Example Key from Postman = " + System.getenv("TEST_ORDER_NUM"));
 	    String clientPyaload = System.getenv("TEST_CLIENT_PAYLOAD");
 	    System.out.println("clientPyaload = " + clientPyaload);
