@@ -41,6 +41,12 @@ jobs:
         run: |
           cd target
           ls -a
+     
+      - name: User Actor Email
+        run: |
+          'echo "User Actor: ${{ github.actor }}"'
+          'echo "User email: ${{ user.email }}"'
+          
       
       # Access the sent value from postman
       - name: Read the input value from postman
