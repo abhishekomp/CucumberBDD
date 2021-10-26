@@ -78,7 +78,8 @@ jobs:
           REPODATA: "Repo: ${{ github.repository }} Workflow: ${{ github.workflow }} Run: ${{ github.run_number }}"
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |
-          echo "Successfully built: ${REPODATA}" |
+          echo "Successfully built: ${REPODATA}" | \
+          echo "\n" | \
           echo "Job URL: ${GITHUB_RUN_URL}" | \
           mutt \
             -s "Job: ${REPODATA}" \
