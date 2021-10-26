@@ -43,9 +43,7 @@ jobs:
           ls -a
      
       - name: User Actor Email
-        run: |
-          'echo "User Actor: ${{ github.actor }}"'
-          'echo "Ran Step User Actor Email"'
+        run: 'echo "User Actor: ${{ github.actor }}"'
           
       
       # Access the sent value from postman
