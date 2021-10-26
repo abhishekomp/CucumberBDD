@@ -45,7 +45,7 @@ jobs:
       - name: User Actor Email
         run: |
           'echo "User Actor: ${{ github.actor }}"'
-          'echo "User email: ${{ user.email }}"'
+          #'echo "User email: ${{ user.email }}"'
           
       
       # Access the sent value from postman
