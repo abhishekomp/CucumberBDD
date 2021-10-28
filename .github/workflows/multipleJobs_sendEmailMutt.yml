@@ -60,8 +60,8 @@ jobs:
 
       - name: Archive Test Results
         id: result
-        if: ${{ failure() }}
         run: 'echo "Event text"'
+        if: ${{ failure() }}
       outputs:
         jobresult: "Failed"
 
