@@ -72,7 +72,7 @@ jobs:
     steps:
       - name: Native Job
         id: native_job
-        run: echo "I'm running on ${{ needs.build.outputs.jobresult }}"
+        run: echo "I'm running on ${{ needs.build.captureresult.outputs.jobresult }}"
 
       - name: Install mutt
         run: sudo apt update && sudo apt install -y mutt
