@@ -25,7 +25,12 @@ jobs:
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
       - name: Succeed
-        run: exit 1
+        run: echo -e "Step Succeed"
+
+      - name: Succeed Two
+        run: |
+          echo -e "Line One"
+          echo -e "Line Two"
 
     - name: Archive Test Results Failed
       id: captureresult
