@@ -62,15 +62,18 @@ jobs:
         id: result
         run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
         if: failure()
-        env:
-          JOB1RESULT: "Failed"
+      outputs:
+        jobresult: "Failed"
 
   notify:
     needs: build
     runs-on: ubuntu-latest
-    if: ${{ env.JOB1RESULT == 'Failed' }}
 
     steps:
+      - name: Native Job
+        id: native_job
+        run: echo "I'm running on ${{ needs.build.outputs.jobresult }}"
+
       - name: Install mutt
         run: sudo apt update && sudo apt install -y mutt
 
