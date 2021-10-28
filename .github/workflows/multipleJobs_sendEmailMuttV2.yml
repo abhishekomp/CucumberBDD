@@ -9,10 +9,11 @@ on:
       ordernumber:
         description: 'Order number to process'
         required: true
-        default: ''
+        default: '8899'
       email:
         description: 'Email address'
         required: true
+        default: 'abhishek777@gmail.com'
 
 # A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
@@ -23,40 +24,9 @@ jobs:
 
     # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
-
-      - name: Set up Java
-        uses: actions/setup-java@v1
-        with:
-          java-version: '1.8'
-
-      
-      - name: Install Maven
-        run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
-        run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+      - name: Succeed
         run: |
-          cd target
-          ls -a
-      
-      # Access the sent value from postman
-      - name: Read the input value from postman
-        run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
-
-      - name: Build with Maven
-        env:
-          GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          TEST_ORDERNUM: ${{ github.event.inputs.ordernumber }}
-        #run: mvn test -Dtest=TestRunner
-        run: >
-          mvn test -Dtest=TestRunner
-          --define cucumber.filter.tags=@P2
+          exit 0
 
       - name: Archive Test Results Failed
         id: captureresult
@@ -93,7 +63,7 @@ jobs:
           REPODATA: "Repo: ${{ github.repository }} Workflow: ${{ github.workflow }} Run: ${{ github.run_number }}"
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |
-          echo -e "Failed Job URL for Order:${{github.event.inputs.ordernumber}}\n${GITHUB_RUN_URL}\n\nRegards\nTest Team"| \
+          echo -e "Job URL for Order:${{github.event.inputs.ordernumber}}\n${GITHUB_RUN_URL}\nJob Status: ${{needs.build.result}}\n\nRegards\nTest Team"| \
           mutt \
             -s "Job: ${REPODATA}" \
             -- "${{ github.event.inputs.email }}"
