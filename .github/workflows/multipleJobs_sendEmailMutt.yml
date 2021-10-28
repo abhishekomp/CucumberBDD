@@ -60,8 +60,8 @@ jobs:
 
       - name: Archive Test Results
         id: result
-        if: failure()
-        run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
+        if: ${{ failure() }}
+        run: 'echo "Event text"'
       outputs:
         jobresult: "Failed"
 
