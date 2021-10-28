@@ -42,7 +42,7 @@ jobs:
       - name: Native Job
         id: native_job
         run: |
-          echo "I'm running on"
+          echo "Status of 'build' job = "
           echo "${{needs.build.result}}"
 
       - name: Install mutt
