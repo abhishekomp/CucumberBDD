@@ -28,8 +28,8 @@ jobs:
         run: echo -e "Step Succeed"
 
       - name: Succeed Two
-        run: |
-          echo -e "Line One"|\
+        run: >
+          echo -e "Line One"| \
           echo -e "Line Two"
 
   notify:
