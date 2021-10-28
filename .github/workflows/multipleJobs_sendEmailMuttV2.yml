@@ -32,12 +32,6 @@ jobs:
           echo -e "Line One"|
           echo -e "Line Two"
 
-    - name: Archive Test Results Failed
-      id: captureresult
-      if: ${{ failure() }}
-      run: echo "::set-output name=jobresult::'Failed'"
-
-
   notify:
     needs: build
     if: always()
