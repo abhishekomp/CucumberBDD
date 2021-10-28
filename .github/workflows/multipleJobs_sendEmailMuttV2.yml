@@ -29,7 +29,7 @@ jobs:
 
       - name: Succeed Two
         run: |
-          echo -e "Line One"
+          echo -e "Line One"|
           echo -e "Line Two"
 
     - name: Archive Test Results Failed
