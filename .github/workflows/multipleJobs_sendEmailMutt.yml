@@ -58,7 +58,7 @@ jobs:
           mvn test -Dtest=TestRunner
           --define cucumber.filter.tags=@P2
 
-      - name: Archive Test Results
+      - name: Archive Test Results Failed
         id: captureresult
         if: ${{ failure() }}
         run: echo "::set-output name=jobresult::'Failed'"
@@ -66,6 +66,7 @@ jobs:
 
   notify:
     needs: build
+    if: always()
     runs-on: ubuntu-latest
 
     steps:
