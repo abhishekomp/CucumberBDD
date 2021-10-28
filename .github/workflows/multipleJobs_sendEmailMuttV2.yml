@@ -30,7 +30,7 @@ jobs:
       - name: Succeed Two
         run: |
           echo -e "Line One" | \
-          echo -e "Line Two" |
+          echo -e "Line Two" | \
 
   notify:
     needs: build
