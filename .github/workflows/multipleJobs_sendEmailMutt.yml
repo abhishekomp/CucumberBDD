@@ -61,7 +61,7 @@ jobs:
       - name: Archive Test Results
         id: captureresult
         if: ${{ failure() }}
-        run: echo "::set-output name=author::$(git show -s --format=%an)"
+        run: echo "::set-output name=jobresult::'Failed'"
 
 
   notify:
