@@ -58,4 +58,7 @@ jobs:
         run: >
           mvn test -Dtest=TestRunner
           --define cucumber.filter.tags=@P2
+
+      - name: Incoming value from Java Program
+          run: 'echo "Current Day: ${{ TEST_CURRENT_DAY }}"'
       
