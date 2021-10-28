@@ -59,9 +59,8 @@ jobs:
           --define cucumber.filter.tags=@P2
 
       - name: Archive Test Results
-        id: result
-        run: 'echo "Event text"'
         if: ${{ failure() }}
+        run: 'echo "Event text"'
       outputs:
         jobresult: "Failed"
 
