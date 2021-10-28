@@ -59,10 +59,10 @@ jobs:
           --define cucumber.filter.tags=@P2
 
       - name: Archive Test Results
+        id: captureresult
         if: ${{ failure() }}
-        run: 'echo "Event text"'
-      outputs:
-        jobresult: "Failed"
+        run: echo "::set-output name=author::$(git show -s --format=%an)"
+
 
   notify:
     needs: build
