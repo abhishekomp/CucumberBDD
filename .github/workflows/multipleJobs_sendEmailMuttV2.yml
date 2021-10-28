@@ -28,10 +28,10 @@ jobs:
         run: |
           exit 0
 
-      - name: Archive Test Results Failed
-        id: captureresult
-        if: ${{ failure() }}
-        run: echo "::set-output name=jobresult::'Failed'"
+    - name: Archive Test Results Failed
+      id: captureresult
+      if: ${{ failure() }}
+      run: echo "::set-output name=jobresult::'Failed'"
 
 
   notify:
@@ -64,6 +64,7 @@ jobs:
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |
           echo -e "Job URL for Order:${{github.event.inputs.ordernumber}}\n${GITHUB_RUN_URL}\nJob Status: ${{needs.build.result}}\n\nRegards\nTest Team"| \
+          echo -e "\nJOB URL for Order:${{github.event.inputs.ordernumber}}\n${GITHUB_RUN_URL}\nJob Status: ${{needs.build.conclusion}}\n\nRegards\nTest Team"| \
           mutt \
             -s "Job: ${REPODATA}" \
             -- "${{ github.event.inputs.email }}"
