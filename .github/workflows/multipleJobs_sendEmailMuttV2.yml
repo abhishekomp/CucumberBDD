@@ -31,6 +31,8 @@ jobs:
         run: |
           echo -e "Line One"
           echo -e "Line Two"
+          echo "Line Three"
+          echo "Line Four"
 
   notify:
     needs: build
