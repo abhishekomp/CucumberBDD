@@ -1,8 +1,18 @@
-# This is a basic workflow to help you get started with Actions
+# ─────────────────────────────────────────────────────────────────────────────
+# Workflow: Send Email Test 2 (mutt)
+#
+# PURPOSE  : Alternative email approach using the system 'mutt' mail client
+#            instead of a third-party action.  Demonstrates:
+#            • Installing system packages mid-workflow (apt)
+#            • Writing a config file dynamically with a heredoc
+#            • Sending email from shell with mutt
+#            • Two workflow_dispatch inputs (ordernumber + recipient email)
+#
+# TRIGGER  : workflow_dispatch with required 'ordernumber' and 'email' inputs.
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Send Email Test 2
 
-# Controls when the workflow will run
 on:
   workflow_dispatch:
     inputs:
@@ -11,58 +21,66 @@ on:
         required: true
         default: ''
       email:
-        description: 'Email address'
+        description: 'Recipient email address for the notification'
         required: true
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── JDK setup ─────────────────────────────────────────────────────────
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          java-version: '1.8'
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
-      
-      - name: Install Maven
+      # ── Compile & package ─────────────────────────────────────────────────
+      - name: Build and package with Maven
         run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
+
+      - name: List workspace root
         run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+
+      - name: List target directory contents
         run: |
           cd target
           ls -a
-      
-      # Access the sent value from postman
-      - name: Read the input value from postman
+
+      # ── Echo payload field (learning demo) ────────────────────────────────
+      - name: Echo client payload example-key
         run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
 
-      - name: Build with Maven
+      # ── Run @P2 Cucumber scenario ─────────────────────────────────────────
+      - name: Run Cucumber @P2 tests
         env:
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           TEST_ORDERNUM: ${{ github.event.inputs.ordernumber }}
-        #run: mvn test -Dtest=TestRunner
         run: >
           mvn test -Dtest=TestRunner
-          --define cucumber.filter.tags=@P2
-          
+          -Dcucumber.filter.tags=@P2
+
+      # ── Install mutt ──────────────────────────────────────────────────────
+      # 'if: always()' guarantees the email steps run even after a test failure.
+      # mutt is a lightweight CLI mail client available in Ubuntu's apt repos.
       - name: Install mutt
         if: always()
         run: sudo apt update && sudo apt install -y mutt
 
-      - name: Setup mutt
+      # ── Configure mutt ────────────────────────────────────────────────────
+      # A heredoc (cat << EOF) writes a multi-line string to ~/.muttrc.
+      # mutt reads this file for SMTP settings on every invocation.
+      # WARNING: avoid echoing secrets in run logs; they are masked but
+      # it is good practice to reference them only where needed.
+      - name: Configure mutt
         if: always()
         run: |
           cat << EOF > ~/.muttrc
@@ -72,13 +90,17 @@ jobs:
           set realname = "Abhishek"
           EOF
 
-      - name: Send email
+      # ── Send email via mutt ───────────────────────────────────────────────
+      # The pipe ( | ) feeds the echo output as the email body to mutt.
+      # -s sets the subject, -- separates options from the recipient address.
+      # ${{ github.event.inputs.email }} is the address entered at dispatch time.
+      - name: Send result email via mutt
         if: always()
         env:
           REPODATA: "Repo: ${{ github.repository }} Workflow: ${{ github.workflow }} Run: ${{ github.run_number }}"
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |
-          echo -e "Job URL for Order:${{github.event.inputs.ordernumber}}\n${GITHUB_RUN_URL}\n\nRegards\nTest Team"| \
+          echo -e "Job URL for Order: ${{ github.event.inputs.ordernumber }}\n${GITHUB_RUN_URL}\n\nRegards\nTest Team" | \
           mutt \
             -s "Job: ${REPODATA}" \
             -- "${{ github.event.inputs.email }}"

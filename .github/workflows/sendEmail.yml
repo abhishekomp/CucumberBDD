@@ -1,8 +1,18 @@
-# This is a basic workflow to help you get started with Actions
+# ─────────────────────────────────────────────────────────────────────────────
+# Workflow: Send Email
+#
+# PURPOSE  : Runs the @P2 Cucumber scenario and sends an email notification
+#            with the result.  Demonstrates:
+#            • workflow_dispatch inputs  (order number supplied by the caller)
+#            • passing inputs to Java via env vars
+#            • building a run URL from GitHub context expressions
+#            • sending email with the dawidd6/action-send-mail action
+#
+# TRIGGER  : workflow_dispatch with a required 'ordernumber' input.
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Send Email
 
-# Controls when the workflow will run
 on:
   workflow_dispatch:
     inputs:
@@ -11,65 +21,82 @@ on:
         required: true
         default: ''
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── JDK setup ─────────────────────────────────────────────────────────
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          java-version: '1.8'
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
-      
-      - name: Install Maven
+      # ── Compile & package ─────────────────────────────────────────────────
+      - name: Build and package with Maven
         run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
+
+      - name: List workspace root
         run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+
+      - name: List target directory contents
         run: |
           cd target
           ls -a
-      
-      # Access the sent value from postman
-      - name: Read the input value from postman
+
+      # ── Echo payload field (repository_dispatch demo) ─────────────────────
+      # github.event.client_payload is only populated for repository_dispatch
+      # events; it will be empty here.  This step is kept for learning purposes.
+      - name: Echo client payload example-key
         run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
 
-      - name: Build with Maven
+      # ── Run @P2 Cucumber scenario ─────────────────────────────────────────
+      # Environment variables injected here are visible to the Java process
+      # as System.getenv(...) calls:
+      #   GITHUB_RUN_URL  – clickable link built from github context expressions
+      #   TEST_ORDERNUM   – the order number the user typed in the dispatch form
+      - name: Run Cucumber @P2 tests
         env:
+          # Build the direct URL to this run: server / owner/repo / actions/runs / run-id
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           TEST_ORDERNUM: ${{ github.event.inputs.ordernumber }}
-        #run: mvn test -Dtest=TestRunner
         run: >
           mvn test -Dtest=TestRunner
-          --define cucumber.filter.tags=@P2
-          
-      - name: Send mail
+          -Dcucumber.filter.tags=@P2
+
+      # ── Email notification ────────────────────────────────────────────────
+      # 'if: always()' ensures this step runs even when the test step fails,
+      # so we always receive a notification about the outcome.
+      #
+      # Secrets (EMAIL_USERNAME / EMAIL_PASSWORD) must be configured in:
+      #   Repository → Settings → Secrets and variables → Actions
+      #
+      # The dawidd6/action-send-mail action wraps an SMTP client;
+      # v2 is used here for stability (check for newer versions as needed).
+      - name: Send result email
         if: always()
         uses: dawidd6/action-send-mail@v2
         with:
-        # mail server settings
+          # SMTP server configuration
           server_address: smtp.gmail.com
           server_port: 465
-        # user credentials
+          # Credentials stored as encrypted repository secrets
           username: ${{ secrets.EMAIL_USERNAME }}
           password: ${{ secrets.EMAIL_PASSWORD }}
-        # email subject
+          # Dynamic subject using GitHub context expressions
           subject: ${{ github.job }} job of ${{ github.repository }} has ${{ job.status }}
-        # email body as text
-          body: ${{ github.job }} job in worflow ${{ github.workflow }} of ${{ github.repository }} has ${{ job.status }} with URL ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
-        # comma-separated string, send email to
+          # Body includes a direct link to the workflow run for easy debugging
+          body: >
+            ${{ github.job }} job in workflow ${{ github.workflow }}
+            of ${{ github.repository }} has ${{ job.status }}.
+            Run URL: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
           to: abhishek777@gmail.com
-        # from email name
           from: Abhishek Automation GitHub

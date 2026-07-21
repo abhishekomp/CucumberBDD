@@ -1,52 +1,82 @@
-# This is a basic workflow to help you get started with Actions
+# ─────────────────────────────────────────────────────────────────────────────
+# Workflow: RunCucumber
+#
+# PURPOSE  : Builds the project and runs the Cucumber test suite via Maven.
+#            Demonstrates passing runtime environment variables to Java tests
+#            and using GitHub context expressions inside a workflow step.
+#
+# TRIGGER  : workflow_dispatch → manual run from the Actions tab.
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: RunCucumber
 
-# Controls when the workflow will run
 on:
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
+    # Inputs let you supply parameters when triggering the workflow manually.
+    # Here we allow the caller to specify a Cucumber tag filter.
+    inputs:
+      tags:
+        description: 'Cucumber tag filter (e.g. @P1 or @P2)'
+        required: false
+        default: ''
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── JDK setup ─────────────────────────────────────────────────────────
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          java-version: '1.8'
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
-      
-      - name: Install Maven
+      # ── Compile & package ─────────────────────────────────────────────────
+      # Running 'package' first validates that the project compiles cleanly
+      # before we attempt to run the tests in the next step.
+      - name: Build and package with Maven
         run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
+
+      - name: List workspace root
         run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+
+      - name: List target directory contents
         run: |
           cd target
           ls -a
-          
-      - name: Build with Maven
+
+      # ── Run Cucumber tests ────────────────────────────────────────────────
+      # '-Dtest=TestRunner' targets our specific JUnit runner class.
+      # '--define cucumber.filter.tags' passes a tag expression so only
+      # matching scenarios execute (empty string = run all scenarios).
+      #
+      # The 'env:' block injects environment variables that the Java code
+      # reads via System.getenv().  JOB_ID_TRS receives the GitHub run ID
+      # which uniquely identifies this workflow execution.
+      #
+      # '>' (YAML folded scalar) joins the continuation lines with spaces,
+      # producing a single shell command – useful for long mvn invocations.
+      - name: Run Cucumber tests
         env:
           JOB_ID_TRS: ${{ github.run_id }}
         run: >
           mvn test -Dtest=TestRunner
-          --define cucumber.filter.tags="${{ github.event.inputs.tags }}"
+          -Dcucumber.filter.tags="${{ github.event.inputs.tags }}"
           --batch-mode --quiet
-	  
-      - name: Using Variables
+
+      # ── Print an env variable ─────────────────────────────────────────────
+      # Each step has its own environment scope.  To share a variable across
+      # steps you must either re-declare it in each step's 'env:' block or
+      # use $GITHUB_ENV to export it (see GitHub docs: "Environment variables").
+      - name: Print job run ID
         env:
-         JOB_ID_TRS: ${{ github.run_id }}
-      - run: echo $JOB_ID_TRS
+          JOB_ID_TRS: ${{ github.run_id }}
+        run: echo "Run ID is $JOB_ID_TRS"

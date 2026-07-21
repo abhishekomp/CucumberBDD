@@ -1,63 +1,87 @@
-# This is a basic workflow to help you get started with Actions
+# ─────────────────────────────────────────────────────────────────────────────
+# Workflow: Dump Variables
+#
+# PURPOSE  : Companion to UsingVariable.yml – a clean reference showing how to
+#            inspect every GitHub Actions context object in the run log.
+#            Useful when learning what data is available in expressions like
+#            ${{ github.* }}, ${{ job.* }}, ${{ runner.* }}, etc.
+#
+# TIP: Run this workflow first when debugging a new workflow – the context
+#      dump will show you exactly which fields are populated for your event.
+#
+# TRIGGER  : workflow_dispatch → run manually from the Actions tab.
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Dump Variables
 
-# Controls when the workflow will run
 on:
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── JDK setup ─────────────────────────────────────────────────────────
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          java-version: '1.8'
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
-      
-      - name: Install Maven
+      # ── Compile & package ─────────────────────────────────────────────────
+      - name: Build and package with Maven
         run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
+
+      - name: List workspace root
         run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+
+      - name: List target directory contents
         run: |
           cd target
           ls -a
-          
+
+      # ── Context dumps ─────────────────────────────────────────────────────
+      # Each step stores its context in an env var and prints it.
+      # toJson() converts the context object into a readable JSON string.
+      # Secrets are always redacted even if referenced inside toJson().
+
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+
       - name: Dump job context
         env:
           JOB_CONTEXT: ${{ toJson(job) }}
         run: echo "$JOB_CONTEXT"
+
+      # steps context is most useful later in a workflow when earlier steps
+      # have set outputs (id + outputs block).
       - name: Dump steps context
         env:
           STEPS_CONTEXT: ${{ toJson(steps) }}
         run: echo "$STEPS_CONTEXT"
+
       - name: Dump runner context
         env:
           RUNNER_CONTEXT: ${{ toJson(runner) }}
         run: echo "$RUNNER_CONTEXT"
+
+      # strategy and matrix are only populated when using a matrix build;
+      # they will appear as '{}' in a normal single-run workflow.
       - name: Dump strategy context
         env:
           STRATEGY_CONTEXT: ${{ toJson(strategy) }}
         run: echo "$STRATEGY_CONTEXT"
+
       - name: Dump matrix context
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}

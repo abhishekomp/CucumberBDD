@@ -1,4 +1,79 @@
+# ─────────────────────────────────────────────────────────────────────────────
+# .gitignore for a Maven + Cucumber BDD Java project
+# ─────────────────────────────────────────────────────────────────────────────
+
+# ── Maven build output ────────────────────────────────────────────────────────
+# 'target/' is where Maven places compiled classes, JARs, and test reports.
+# Never commit generated artefacts – they are reproducible from source.
+target/
+
+# ── IntelliJ IDEA ─────────────────────────────────────────────────────────────
+# .idea/  – project-level IDE settings (most are machine-specific)
+# *.iml   – module files (contain absolute paths)
+# Exceptions you may WANT to commit (uncomment selectively):
+#   .idea/runConfigurations/  – shared run/debug configs
+#   .idea/codeStyles/         – team code-style settings
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# ── Eclipse / Spring Tool Suite ───────────────────────────────────────────────
 .classpath
 .project
 .settings/
-target
+bin/
+*.launch
+*.factorypath
+
+# ── VS Code ───────────────────────────────────────────────────────────────────
+.vscode/
+
+# ── NetBeans ──────────────────────────────────────────────────────────────────
+nbproject/
+nbbuild/
+nbdist/
+.nb-gradle/
+
+# ── macOS ─────────────────────────────────────────────────────────────────────
+.DS_Store
+.AppleDouble
+.LSOverride
+._*
+
+# ── Windows ───────────────────────────────────────────────────────────────────
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+
+# ── Linux ─────────────────────────────────────────────────────────────────────
+*~
+
+# ── Java ──────────────────────────────────────────────────────────────────────
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+hs_err_pid*
+replay_pid*
+
+# ── Maven wrapper (keep the wrapper scripts; ignore downloaded binaries) ──────
+.mvn/wrapper/maven-wrapper.jar
+
+# ── Test & coverage reports ───────────────────────────────────────────────────
+# Cucumber HTML/JSON reports are generated into target/ (already ignored above)
+# but listed here explicitly for clarity.
+target/cucumber-reports/
+target/surefire-reports/
+
+# ── Environment / secrets ─────────────────────────────────────────────────────
+# Never commit local environment files that may contain credentials.
+.env
+.env.*
+*.properties.local
+
+# ── Logs ──────────────────────────────────────────────────────────────────────
+*.log
+logs/

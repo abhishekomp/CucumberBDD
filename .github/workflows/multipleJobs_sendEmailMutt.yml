@@ -1,8 +1,20 @@
-# This is a basic workflow to help you get started with Actions
+# ─────────────────────────────────────────────────────────────────────────────
+# Workflow: Multiple Jobs Send Email
+#
+# PURPOSE  : Demonstrates multi-job workflows with job dependencies and
+#            inter-job output passing.  Concepts covered:
+#            • Two jobs: 'build' (runs tests) and 'notify' (sends email)
+#            • 'needs: build' – 'notify' waits for 'build' to complete
+#            • 'if: always()' on 'notify' – runs regardless of build outcome
+#            • Job outputs – passing data (e.g. test result) from one job
+#              to another via the outputs / $GITHUB_OUTPUT mechanism
+#            • needs.<job>.result – reading the conclusion of a previous job
+#
+# TRIGGER  : workflow_dispatch with ordernumber and email inputs.
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Multiple Jobs Send Email
 
-# Controls when the workflow will run
 on:
   workflow_dispatch:
     inputs:
@@ -11,73 +23,85 @@ on:
         required: true
         default: ''
       email:
-        description: 'Email address'
+        description: 'Recipient email address for the notification'
         required: true
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
+  # ── Job 1: build ────────────────────────────────────────────────────────────
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
+    # Declare outputs that other jobs can read via needs.build.outputs.<name>
+    outputs:
+      jobresult: ${{ steps.captureresult.outputs.jobresult }}
+
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          java-version: '1.8'
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
-      
-      - name: Install Maven
+      - name: Build and package with Maven
         run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
+
+      - name: List workspace root
         run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+
+      - name: List target directory contents
         run: |
           cd target
           ls -a
-      
-      # Access the sent value from postman
-      - name: Read the input value from postman
+
+      - name: Echo client payload example-key
         run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
 
-      - name: Build with Maven
+      - name: Run Cucumber @P2 tests
         env:
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           TEST_ORDERNUM: ${{ github.event.inputs.ordernumber }}
-        #run: mvn test -Dtest=TestRunner
         run: >
           mvn test -Dtest=TestRunner
-          --define cucumber.filter.tags=@P2
+          -Dcucumber.filter.tags=@P2
 
-      - name: Archive Test Results Failed
+      # ── Capture failure result ──────────────────────────────────────────────
+      # This step only runs when a previous step in this job failed.
+      # It uses $GITHUB_OUTPUT (the modern replacement for the deprecated
+      # set-output command) to expose a value to downstream jobs.
+      # Syntax:  echo "<key>=<value>" >> $GITHUB_OUTPUT
+      - name: Capture failure flag
         id: captureresult
         if: ${{ failure() }}
-        run: echo "::set-output name=jobresult::'Failed'"
+        run: echo "jobresult=Failed" >> $GITHUB_OUTPUT
 
-
+  # ── Job 2: notify ───────────────────────────────────────────────────────────
   notify:
+    # This job depends on 'build'; it will not start until 'build' finishes.
     needs: build
+    # 'always()' means this job runs whether 'build' succeeded or failed.
     if: always()
     runs-on: ubuntu-latest
 
     steps:
-      - name: Native Job
-        id: native_job
-        run: echo "I'm running on ${{ needs.build.captureresult.outputs.jobresult }}"
+
+      # ── Read the build job's conclusion ──────────────────────────────────────
+      # needs.<job-id>.result contains: success | failure | cancelled | skipped
+      # needs.<job-id>.outputs.<name> reads values set via $GITHUB_OUTPUT.
+      - name: Print build job result
+        run: |
+          echo "Build job result:  ${{ needs.build.result }}"
+          echo "Captured output:   ${{ needs.build.outputs.jobresult }}"
 
       - name: Install mutt
         run: sudo apt update && sudo apt install -y mutt
 
-      - name: Setup mutt
+      - name: Configure mutt
         run: |
           cat << EOF > ~/.muttrc
           set smtp_url = "smtps://abhishek777@smtp.gmail.com"
@@ -86,12 +110,12 @@ jobs:
           set realname = "Abhishek"
           EOF
 
-      - name: Send email
+      - name: Send result email via mutt
         env:
           REPODATA: "Repo: ${{ github.repository }} Workflow: ${{ github.workflow }} Run: ${{ github.run_number }}"
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
         run: |
-          echo -e "Failed Job URL for Order:${{github.event.inputs.ordernumber}}\n${GITHUB_RUN_URL}\n\nRegards\nTest Team"| \
+          echo -e "Failed Job URL for Order: ${{ github.event.inputs.ordernumber }}\n${GITHUB_RUN_URL}\n\nRegards\nTest Team" | \
           mutt \
             -s "Job: ${REPODATA}" \
             -- "${{ github.event.inputs.email }}"

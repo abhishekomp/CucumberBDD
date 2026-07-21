@@ -1,69 +1,100 @@
-# This is a basic workflow to help you get started with Actions
+# ─────────────────────────────────────────────────────────────────────────────
+# Workflow: Using Variables
+#
+# PURPOSE  : Reference workflow that shows how to dump every available
+#            GitHub Actions context object as pretty-printed JSON, and how to
+#            capture a runtime value in an environment variable.
+#
+# CONCEPTS:
+#   • Context objects – github, job, steps, runner, strategy, matrix
+#     Each context is a structured object.  toJson() serialises it so you
+#     can inspect the full shape in the logs.
+#   • env: block on a step – injects variables into that step's shell process
+#     only.  They are NOT automatically available in subsequent steps.
+#   • GITHUB_ENV – to persist a variable across steps, write to this file:
+#       echo "MY_VAR=value" >> $GITHUB_ENV
+#
+# TRIGGER  : workflow_dispatch → run manually from the Actions tab.
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Using Variables
 
-# Controls when the workflow will run
 on:
-  # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── JDK setup ─────────────────────────────────────────────────────────
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          java-version: '1.8'
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
-      
-      - name: Install Maven
+      # ── Compile & package ─────────────────────────────────────────────────
+      - name: Build and package with Maven
         run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
+
+      - name: List workspace root
         run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+
+      - name: List target directory contents
         run: |
           cd target
           ls -a
-          
+
+      # ── Dump context objects ──────────────────────────────────────────────
+      # The 'github' context contains metadata about the workflow run:
+      # event name, actor, SHA, ref, repository, run_id, etc.
       - name: Dump GitHub context
         env:
           GITHUB_CONTEXT: ${{ toJson(github) }}
         run: echo "$GITHUB_CONTEXT"
+
+      # The 'job' context has the current job's status and container info.
       - name: Dump job context
         env:
           JOB_CONTEXT: ${{ toJson(job) }}
         run: echo "$JOB_CONTEXT"
+
+      # The 'steps' context holds outputs and conclusions of preceding steps.
       - name: Dump steps context
         env:
           STEPS_CONTEXT: ${{ toJson(steps) }}
         run: echo "$STEPS_CONTEXT"
+
+      # The 'runner' context provides info about the runner: OS, name, temp dir.
       - name: Dump runner context
         env:
           RUNNER_CONTEXT: ${{ toJson(runner) }}
         run: echo "$RUNNER_CONTEXT"
+
+      # The 'strategy' context describes matrix configuration (if used).
       - name: Dump strategy context
         env:
           STRATEGY_CONTEXT: ${{ toJson(strategy) }}
         run: echo "$STRATEGY_CONTEXT"
+
+      # The 'matrix' context holds the current matrix combination values.
       - name: Dump matrix context
         env:
           MATRIX_CONTEXT: ${{ toJson(matrix) }}
         run: echo "$MATRIX_CONTEXT"
-        
-      - name: Capture variable
+
+      # ── Step-scoped variable example ──────────────────────────────────────
+      # JOB_ID_TRS is only visible inside this step.
+      # To use it in a later step, export it: echo "JOB_ID_TRS=..." >> $GITHUB_ENV
+      - name: Print job run ID
         env:
-         JOB_ID_TRS: ${{ github.run_id }}
-        run: echo "$JOB_ID_TRS"
+          JOB_ID_TRS: ${{ github.run_id }}
+        run: echo "Run ID = $JOB_ID_TRS"

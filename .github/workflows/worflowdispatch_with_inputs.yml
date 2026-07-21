@@ -1,8 +1,24 @@
-# This is a basic workflow to help you get started with Actions
+# ─────────────────────────────────────────────────────────────────────────────
+# Workflow: Workflow dispatch with inputs
+#
+# PURPOSE  : Demonstrates workflow_dispatch with user-supplied inputs,
+#            accessing those inputs inside steps, and passing them to a
+#            Maven test run as environment variables.
+#
+# CONCEPTS:
+#   • workflow_dispatch inputs – typed parameters shown in the GitHub UI
+#     when you click "Run workflow".  Types: string (default), boolean,
+#     choice, environment, number.
+#   • github.event.inputs.<name> – expression to read an input value
+#   • github.actor – the GitHub username that triggered the workflow
+#   • env: step block – exposes values to the step's shell as env vars;
+#     those vars are then readable in Java via System.getenv()
+#
+# TRIGGER  : workflow_dispatch with a required 'ordernumber' input.
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Workflow dispatch with inputs
 
-# Controls when the workflow will run
 on:
   workflow_dispatch:
     inputs:
@@ -11,54 +27,67 @@ on:
         required: true
         default: ''
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── JDK setup ─────────────────────────────────────────────────────────
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          java-version: '1.8'
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
-      
-      - name: Install Maven
+      # ── Compile & package ─────────────────────────────────────────────────
+      - name: Build and package with Maven
         run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
+
+      - name: List workspace root
         run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+
+      - name: List target directory contents
         run: |
           cd target
           ls -a
-     
-      - name: User Actor Email
-        run: 'echo "User Actor: ${{ github.actor }}"'
-          
-      
-      # Access the sent value from postman
-      - name: Read the input value from postman
-        run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
 
-      - name: Build with Maven
+      # ── Print workflow actor ──────────────────────────────────────────────
+      # github.actor is the login of the user who triggered the run.
+      - name: Print triggering user
+        run: 'echo "Triggered by: ${{ github.actor }}"'
+
+      # ── Echo client_payload field (learning note) ─────────────────────────
+      # This field is only populated for repository_dispatch events, not
+      # workflow_dispatch.  It will be empty here; kept for comparison.
+      - name: Echo client payload example-key
+        run: 'echo "client_payload.example-key: ${{ github.event.client_payload.example-key }}"'
+
+      # ── Run @P2 Cucumber tests ────────────────────────────────────────────
+      # TEST_ORDERNUM is set from the dispatch input and read in the Java step
+      # definitions via System.getenv("TEST_ORDERNUM").
+      - name: Run Cucumber @P2 tests
         env:
           GITHUB_RUN_URL: "${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
           TEST_ORDERNUM: ${{ github.event.inputs.ordernumber }}
-        #run: mvn test -Dtest=TestRunner
         run: >
           mvn test -Dtest=TestRunner
-          --define cucumber.filter.tags=@P2
+          -Dcucumber.filter.tags=@P2
 
-      - name: Incoming value from Java Program
-          run: 'echo "Current Day: ${{ TEST_CURRENT_DAY }}"'
-      
+      # ── Read an env var set by the Java program ───────────────────────────
+      # NOTE: a Java program cannot write environment variables back to the
+      # GitHub Actions runner shell directly.  To pass data from a Java
+      # step to a later shell step you would need to write to a file and
+      # read it back, or use System.setProperty + Maven Surefire's forked VM
+      # with a custom listener that writes to $GITHUB_ENV.
+      # The original step here referenced ${{ TEST_CURRENT_DAY }} which is
+      # not valid syntax for an env var reference in a run script.
+      # Correct shell syntax for an env var is: $TEST_CURRENT_DAY
+      - name: Print current day (example env var)
+        run: echo "Current Day = $TEST_CURRENT_DAY"

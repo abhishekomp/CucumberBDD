@@ -1,45 +1,66 @@
-# This is a basic workflow to help you get started with Actions
+# ─────────────────────────────────────────────────────────────────────────────
+# Workflow: Github Actions API Example (repository_dispatch)
+#
+# PURPOSE  : Shows how to trigger a workflow from an external system (e.g.
+#            Postman, a shell script, or another service) using the GitHub
+#            REST API's repository_dispatch endpoint.
+#
+# HOW TO TRIGGER (example curl):
+#   curl -X POST \
+#     -H "Accept: application/vnd.github.v3+json" \
+#     -H "Authorization: token <YOUR_PAT>" \
+#     https://api.github.com/repos/<owner>/<repo>/dispatches \
+#     -d '{"event_type":"run-ping","client_payload":{"example-key":"hello"}}'
+#
+# CONCEPTS:
+#   • repository_dispatch – API-driven trigger; not visible in the Actions UI
+#   • client_payload      – arbitrary JSON you send with the dispatch request;
+#                           accessible as github.event.client_payload.*
+#   • types               – lets you have multiple dispatches on one repo and
+#                           route each to different workflows
+#
+# TRIGGER  : repository_dispatch with event type 'run-ping'.
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: Github Actions API Example
 
-# Controls when the workflow will run
 on:
   repository_dispatch:
-   types: [run-ping]
+    types: [run-ping]
 
-# A workflow run is made up of one or more jobs that can run sequentially or in parallel
 jobs:
-  # This workflow contains a single job called "build"
+
   build:
-    # The type of runner that the job will run on
     runs-on: ubuntu-latest
 
-    # Steps represent a sequence of tasks that will be executed as part of the job
     steps:
-      # Checks-out your repository under $GITHUB_WORKSPACE, so your job can access it
-      - name: Step 1 - Checkout master branch from Github
-        uses: actions/checkout@v2
 
-      - name: Set up Java
-        uses: actions/setup-java@v1
+      # ── Checkout ──────────────────────────────────────────────────────────
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # ── JDK setup ─────────────────────────────────────────────────────────
+      - name: Set up Java 21 (Temurin)
+        uses: actions/setup-java@v4
         with:
-          java-version: '1.8'
+          distribution: 'temurin'
+          java-version: '21'
+          cache: 'maven'
 
-      
-      - name: Install Maven
+      # ── Compile & package ─────────────────────────────────────────────────
+      - name: Build and package with Maven
         run: mvn -B package --file pom.xml
-      
-      - name: List the current directory
+
+      - name: List workspace root
         run: ls -a
-      
-      # Runs a set of commands using the runners shell  
-      - name: What is in target directory?
+
+      - name: List target directory contents
         run: |
           cd target
           ls -a
-      
-      # Access the sent value from postman
-      - name: Read the input value from postman
+
+      # ── Read client_payload field ─────────────────────────────────────────
+      # github.event.client_payload contains the JSON body sent with the
+      # dispatch request.  Individual fields are accessed with dot notation.
+      - name: Echo client payload example-key
         run: 'echo "Event text: ${{ github.event.client_payload.example-key }}"'
-      
-      
